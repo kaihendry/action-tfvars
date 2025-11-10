@@ -70,5 +70,5 @@ jobs:
                   terraform plan -no-color
               continue-on-error: false
               env:
-                  TF_VAR_AWS_ACCOUNT: ${{ steps.account.outputs.tf_var_aws_account }}
-                  TF_VAR_AWS_REGION: ${{ steps.account.outputs.tf_var_aws_region }}
+                  TF_VAR_AWS_ACCOUNT: ${{ steps.account.outputs.aws_account }}
+                  TF_VAR_AWS_REGION: ${{ steps.account.outputs.aws_region }}
