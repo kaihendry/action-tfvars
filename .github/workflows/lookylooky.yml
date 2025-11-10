@@ -1,0 +1,74 @@
+name: Example Terraform Deployment
+
+on:
+    workflow_dispatch:
+        inputs:
+            aws_account_group:
+                description: "AWS Account Group"
+                required: true
+                type: choice
+                options:
+                    - mango
+                    - banana
+                    - apple
+                    - kiwi
+                    - grape
+            environment:
+                description: "Environment"
+                required: true
+                type: choice
+                options:
+                    - dev
+                    - prd
+                    - uat
+                    - tst
+            terraform_action:
+                description: "Terraform Action"
+                required: true
+                type: choice
+                default: "plan"
+                options:
+                    - plan
+                    - apply
+                    - destroy
+
+jobs:
+    terraform:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v5
+
+            - name: Lookup AWS Account Info
+              id: account
+              uses: kaihendry/actions/lookup@main
+              with:
+                  aws_account_group: ${{ inputs.aws_account_group }}
+                  environment: ${{ inputs.environment }}
+
+            - name: Display Account Info
+              run: |
+                  echo "### AWS Account Information" >> $GITHUB_STEP_SUMMARY
+                  echo "- **Account:** ${{ steps.account.outputs.aws_account }}" >> $GITHUB_STEP_SUMMARY
+                  echo "- **Region:** ${{ steps.account.outputs.aws_region }}" >> $GITHUB_STEP_SUMMARY
+                  echo "- **Description:** ${{ steps.account.outputs.description }}" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "Account: ${{ steps.account.outputs.aws_account }}"
+                  echo "Region: ${{ steps.account.outputs.aws_region }}"
+                  echo "Description: ${{ steps.account.outputs.description }}"
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v3
+
+            - name: Terraform Format Check
+              id: fmt
+              run: terraform fmt -check -recursive
+              continue-on-error: true
+
+            - name: Terraform Plan
+              run: |
+                  terraform plan -no-color
+              continue-on-error: false
+              env:
+                  TF_VAR_AWS_ACCOUNT: ${{ steps.account.outputs.tf_var_aws_account }}
+                  TF_VAR_AWS_REGION: ${{ steps.account.outputs.tf_var_aws_region }}
